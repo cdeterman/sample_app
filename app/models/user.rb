@@ -1,4 +1,6 @@
 class User < ActiveRecord::Base
+	has_many :microposts, dependent: :destroy
+
 	# before saving, convert email to lowercase
 	before_save { self.email = email.downcase }
 	before_create :create_remember_token
@@ -21,6 +23,12 @@ class User < ActiveRecord::Base
 
 	def User.hash(token)
 		Digest::SHA1.hexdigest(token.to_s)
+	end
+
+	# the ? escapes the id before including in SQL query
+	# good practice as improves security of queries
+	def feed
+		Micropost.where("user_id = ?", id)
 	end
 
 	private
