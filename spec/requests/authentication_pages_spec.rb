@@ -40,11 +40,31 @@ describe "AuthenticationPages" do
 			describe "followed by signout" do
 				before { click_link "Sign out" }
 				it { should have_link('Sign in') }
+
+				# problem 9.3
+				it { should_not have_link('Profile', 	href: user_path(user)) }
+				it { should_not have_link('Settings', 	href: edit_user_path(user)) }
 			end
 		end
 	end
 
 	describe "authorization" do
+
+		describe "for signed-in users" do
+			let(:user) { FactoryGirl.create(:user) }
+			before { sign_in user, no_capybara: true }
+
+			describe "using a 'new' action" do
+				before { get new_user_path }
+				specify { expect(response).to redirect_to(root_url) }
+			end
+
+			describe "using a 'create' action" do
+				before { post users_path, user: user.attributes }
+				specify { expect(response).to redirect_to(root_url) }
+			end
+		end
+
 
 		describe "for non-signed-in users" do
 			let(:user) { FactoryGirl.create(:user) }
@@ -76,7 +96,7 @@ describe "AuthenticationPages" do
 					before { patch user_path(user) }
 					specify { expect(response).to redirect_to(signin_path) }
 				end
-				
+
 				describe "visiting the user index" do
 					before { visit users_path }
 					it { should have_title('Sign in') }

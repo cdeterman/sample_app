@@ -3,6 +3,13 @@ class UsersController < ApplicationController
 	before_action :correct_user, 	only: [:edit, :update]
 	before_action :admin_user, 		only: :destroy
 
+	# Chapter 9 exercise 6
+	before_filter :signed_in_user_filter, only: [:new, :create]
+
+	def signed_in_user_filter
+		redirect_to root_path, notice: "Already logged in" if signed_in?
+	end
+
 	def index
 		@users = User.paginate(page: params[:page])
 	end
@@ -17,14 +24,18 @@ class UsersController < ApplicationController
 	end
 
 	def create
-		# changed :user to user_params for security
-		@user = User.new(user_params) 	# Not the final implementation
-		if @user.save
-			sign_in @user
-			flash[:success] = "Welcome to the Sample App!"
-			redirect_to @user
+		if signed_in?
+			redirect_to root_path
 		else
-			render 'new'
+			# changed :user to user_params for security
+			@user = User.new(user_params) 	# Not the final implementation
+			if @user.save
+				sign_in @user
+				flash[:success] = "Welcome to the Sample App!"
+				redirect_to @user
+			else
+				render 'new'
+			end
 		end
 	end
 
@@ -41,8 +52,13 @@ class UsersController < ApplicationController
 	end
 
 	def destroy
-		User.find(params[:id]).destroy
-		flash[:success] = "User deleted."
+		user = User.find(params[:id])
+		unless current_user?(user)
+			user.destroy
+			flash[:success] = "User deleted."
+		else
+			flash[:error] = "You can't delete yourself."
+		end
 		redirect_to users_url
 	end
 
